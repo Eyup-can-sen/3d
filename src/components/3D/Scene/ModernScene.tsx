@@ -70,6 +70,7 @@ export const ModernScene: React.FC = () => {
         updateMousePosition, // YENİ: useAdvancedWarehouseBuilder'dan alıyoruz
     } = warehouseBuilder;
 
+    //importlar etkilenri
     // Yerel Durum Yönetimi
     const [cargos] = useState<any[]>([]);
     const [rackPlacementMode, setRackPlacementMode] = useState(false);
