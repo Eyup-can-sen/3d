@@ -293,27 +293,28 @@ export const ModernWarehouse: React.FC<ModernWarehouseProps> = ({
                         />
                     )}
 
-                    {/* Construction info */}
-                    <Html
-                        position={centroidPosition} // Use centroid for consistent positioning
-                        center
-                    >
-                        <div style={{
-                            background: `${modernTheme.colors.warning}15`,
-                            border: `1px solid ${modernTheme.colors.warning}`,
-                            borderRadius: modernTheme.borderRadius.md,
-                            padding: modernTheme.spacing.sm,
-                            fontSize: '11px',
-                            color: modernTheme.colors.warning,
-                            fontWeight: '600'
-                        }}>
-                            🚧 İnşaat Modunda<br />
-                            {processedPoints.length < 3
-                                ? `${3 - processedPoints.length} nokta daha gerekli`
-                                : 'Tamamlamak için çizimi bitirin'
-                            }
-                        </div>
-                    </Html>
+                    {processedPoints.length > 0 && (
+                        <Html
+                            position={centroidPosition}
+                            center
+                        >
+                            <div style={{
+                                background: `${modernTheme.colors.warning}15`,
+                                border: `1px solid ${modernTheme.colors.warning}`,
+                                borderRadius: modernTheme.borderRadius.md,
+                                padding: modernTheme.spacing.sm,
+                                fontSize: '11px',
+                                color: modernTheme.colors.warning,
+                                fontWeight: '600'
+                            }}>
+                                🚧 İnşaat Modunda<br />
+                                {processedPoints.length < 3
+                                    ? `${3 - processedPoints.length} nokta daha gerekli`
+                                    : 'Tamamlamak için çizimi bitirin'
+                                }
+                            </div>
+                        </Html>
+                    )}
                 </group>
             )}
 
