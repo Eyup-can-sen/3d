@@ -1,185 +1,116 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+// src/components/3D/Controls/ModernGroundHandler.tsx
+import React, { useRef, useCallback, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Plane, Vector3, Raycaster, Vector2, Mesh } from 'three';
-import { Html } from '@react-three/drei';
-import { useAdvancedWarehouseBuilder } from '../../../hooks/useAdvancedWarehouseBuilder';
-import { RackConfig } from '../Scene/ModernScene';
-import { modernTheme } from '../UI/ModernTheme';
+import { Grid, Html } from '@react-three/drei';
+import * as THREE from 'three';
+import { type ThreeEvent } from '@react-three/fiber'; // ThreeEvent'i tip olarak import edin
 
 interface ModernGroundHandlerProps {
-  showGrid?: boolean;
-  gridSize?: number;
-  snapToGrid?: boolean;
-  gridSpacing?: number;
-  onRackPlacement?: (x: number, z: number) => void;
-  rackPlacementMode?: boolean;
-  pendingRackConfig?: RackConfig | null;
+  onGroundClick: (e: ThreeEvent<MouseEvent>) => void;
+  onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
+  snapToGrid: boolean;
+  gridSize: number;
 }
 
-export const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
-  showGrid = true,
-  gridSize = 50,
-  snapToGrid = true,
-  gridSpacing = 1,
-  onRackPlacement,
-  rackPlacementMode = false,
-  pendingRackConfig
+const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
+  onGroundClick,
+  onPointerMove,
+  snapToGrid,
+  gridSize,
 }) => {
-  const { camera, scene, gl } = useThree();
-  const planeRef = useRef<Mesh>(null);
-  const raycasterRef = useRef(new Raycaster());
-  const mouseRef = useRef(new Vector2());
-  
-  const {
-    mode,
-    currentPlan,
-    isDrawing,
-    previewLine,
-    updateMousePosition,
-    addPoint
-  } = useAdvancedWarehouseBuilder();
+  const meshRef = useRef<THREE.Mesh>(null!);
+  const { scene } = useThree();
 
-  const [mouseWorldPos, setMouseWorldPos] = React.useState({ x: 0, z: 0 });
+  // Fare basılı tutulduğunda başlangıç konumunu ve sürükleme durumunu tut
+  const pointerDownRef = useRef<{ clientX: number; clientY: number } | null>(null);
+  // `isDragging` durumu yalnızca UI geri bildirimi için kullanılabilir,
+  // tıklama mantığı `handlePointerUp` içindeki mesafe kontrolüne bağlıdır.
+  const [isDragging, setIsDragging] = useState(false); 
 
-  // Grid snap fonksiyonu
   const snapToGridPoint = useCallback((x: number, z: number) => {
-    if (!snapToGrid) return { x, z };
-    
-    return {
-      x: Math.round(x / gridSpacing) * gridSpacing,
-      z: Math.round(z / gridSpacing) * gridSpacing
-    };
-  }, [snapToGrid, gridSpacing]);
+    if (!snapToGrid) return new THREE.Vector3(x, 0, z);
+    const spacing = 1; // 1 metrelik aralıklarla snap yap (ModernScene'deki snapToGridPoint ile uyumlu olmalı)
+    return new THREE.Vector3(
+      Math.round(x / spacing) * spacing,
+      0,
+      Math.round(z / spacing) * spacing
+    );
+  }, [snapToGrid]);
 
-  // Mouse pozisyon takibi
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!planeRef.current) return;
+  const handlePointerDown = useCallback((event: ThreeEvent<PointerEvent>) => {
+    // Fareye basıldığında başlangıç Client koordinatlarını kaydet
+    pointerDownRef.current = { clientX: event.clientX, clientY: event.clientY };
+    setIsDragging(false); // Başlangıçta sürükleme yok sayılır
+  }, []);
 
-    const rect = gl.domElement.getBoundingClientRect();
-    mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  const handlePointerUp = useCallback((event: ThreeEvent<PointerEvent>) => {
+    if (pointerDownRef.current) {
+      const dx = Math.abs(event.clientX - pointerDownRef.current.clientX);
+      const dy = Math.abs(event.clientY - pointerDownRef.current.clientY);
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-    raycasterRef.current.setFromCamera(mouseRef.current, camera);
-    
-    const ground = new Plane(new Vector3(0, 1, 0), 0);
-    const intersection = new Vector3();
-    
-    if (raycasterRef.current.ray.intersectPlane(ground, intersection)) {
-      let { x, z } = snapToGridPoint(intersection.x, intersection.z);
-      
-      setMouseWorldPos({ x, z });
-      updateMousePosition(x, z);
-    }
-  }, [camera, snapToGridPoint, updateMousePosition, gl.domElement]);
-
-  // Click işleme
-  const handleClick = useCallback((event: MouseEvent) => {
-    if (mode === 'draw') {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      const { x, z } = mouseWorldPos;
-      addPoint(x, z);
-    } else if (rackPlacementMode && onRackPlacement) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      const { x, z } = mouseWorldPos;
-      onRackPlacement(x, z);
-    }
-  }, [mode, rackPlacementMode, mouseWorldPos, addPoint, onRackPlacement]);
-
-  // Event listeners
-  useEffect(() => {
-    const canvas = gl.domElement;
-    
-    const onMouseMove = (e: MouseEvent) => handleMouseMove(e);
-    const onMouseDown = (e: MouseEvent) => {
-      if (e.button === 0) {
-        handleClick(e);
+      // Eğer fare başlangıç konumundan çok az kaydırıldıysa (eşik değeri 5 piksel),
+      // bunu bir tıklama olarak kabul et ve `onGroundClick` prop'unu çağır.
+      // Aksi takdirde, bu bir sürükleme işlemiydi ve tıklama yapma.
+      const clickTolerance = 5; // Pixels
+      if (distance < clickTolerance) {
+        console.log("[ModernGroundHandler] Tıklama algılandı, onGroundClick çağrılıyor.");
+        // ThreeEvent<PointerEvent>'ı ThreeEvent<MouseEvent>'e dönüştürüyoruz,
+        // çünkü handleCanvasClick MouseEvent bekliyor olabilir.
+        onGroundClick(event as ThreeEvent<MouseEvent>); 
+      } else {
+        console.log(`[ModernGroundHandler] Sürükleme sona erdi. Mesafe: ${distance.toFixed(2)}px`);
       }
-    };
-    
-    canvas.addEventListener('mousemove', onMouseMove, { passive: false });
-    canvas.addEventListener('mousedown', onMouseDown, { passive: false });
+    }
+    // İşlem bitti, referansı ve sürükleme durumunu sıfırla
+    pointerDownRef.current = null;
+    setIsDragging(false); 
+  }, [onGroundClick]);
 
-    return () => {
-      canvas.removeEventListener('mousemove', onMouseMove);
-      canvas.removeEventListener('mousedown', onMouseDown);
-    };
-  }, [handleMouseMove, handleClick, gl]);
+  const handlePointerMove = useCallback((event: ThreeEvent<PointerEvent>) => {
+    // Fare basılıyken hareket ediyorsa ve henüz sürükleme olarak işaretlenmediyse
+    if (pointerDownRef.current && !isDragging) {
+      const dx = Math.abs(event.clientX - pointerDownRef.current.clientX);
+      const dy = Math.abs(event.clientY - pointerDownRef.current.clientY);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const dragThreshold = 5; // Eşik değeri kadar hareket ettiyse sürükleme olarak kabul et
+      if (distance >= dragThreshold) { 
+        setIsDragging(true); // Sürükleme başladı
+        console.log(`[ModernGroundHandler] Sürükleme başladı. Hareket mesafesi: ${distance.toFixed(2)}px`);
+      }
+    }
+
+    // Dünya koordinatlarında fare pozisyonunu gönder
+    const intersection = event.intersections.find(i => i.object === meshRef.current);
+    if (intersection) {
+      const { x, z } = snapToGridPoint(intersection.point.x, intersection.point.z);
+      // `onPointerMove`'a her zaman çağrı yaparız ki `previewLine` güncellenebilsin.
+      onPointerMove({ ...event, point: new THREE.Vector3(x, 0, z) }); 
+    }
+  }, [onPointerMove, snapToGridPoint, isDragging]);
 
   return (
-    <group>
-      {/* Ground plane */}
+    <>
       <mesh
-        ref={planeRef}
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.01, 0]}
-        visible={false}
+        ref={meshRef}
+        rotation-x={-Math.PI / 2} // XZ düzleminde olması için döndür
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerMove={handlePointerMove}
       >
-        <planeGeometry args={[1000, 1000]} />
-        <meshBasicMaterial transparent opacity={0} />
+        <planeGeometry args={[gridSize, gridSize]} />
+        {/* Materyali görünmez yapıyoruz, böylece sadece etkileşim için kullanılıyor */}
+        <meshStandardMaterial color="#f0f0f0" transparent opacity={0} /> 
       </mesh>
-
-      {/* Grid */}
-      {showGrid && (
-        <gridHelper
-          args={[gridSize, gridSize / gridSpacing, modernTheme.colors.border.light, modernTheme.colors.border.light]}
-          position={[0, 0, 0]}
-        />
-      )}
-
-      {/* Raf yerleştirme önizlemesi */}
-      {rackPlacementMode && pendingRackConfig && (
-        <mesh position={[mouseWorldPos.x, pendingRackConfig.dimensions.height / 2, mouseWorldPos.z]}>
-          <boxGeometry args={[
-            pendingRackConfig.dimensions.width,
-            pendingRackConfig.dimensions.height,
-            pendingRackConfig.dimensions.depth
-          ]} />
-          <meshStandardMaterial 
-            color={pendingRackConfig.color}
-            transparent 
-            opacity={0.5}
-          />
-        </mesh>
-      )}
-
-      {/* Noktaları göster */}
-      {currentPlan.points.map((point, index) => (
-        <group key={point.id}>
-          <mesh position={[point.x, 0.2, point.z]}>
-            <sphereGeometry args={[0.2, 16, 16]} />
-            <meshStandardMaterial 
-              color={index === 0 ? '#e74c3c' : '#4a90e2'} 
-              emissive={index === 0 ? '#e74c3c' : '#4a90e2'}
-              emissiveIntensity={0.3}
-            />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Preview line */}
-      {previewLine && mode === 'draw' && (
-        <mesh
-          position={[
-            (previewLine.start.x + previewLine.end.x) / 2,
-            0.05,
-            (previewLine.start.z + previewLine.end.z) / 2
-          ]}
-          rotation={[0, Math.atan2(
-            previewLine.end.z - previewLine.start.z,
-            previewLine.end.x - previewLine.start.x
-          ), 0]}
-        >
-          <boxGeometry args={[previewLine.distance, 0.02, 0.1]} />
-          <meshBasicMaterial color="#4a90e2" transparent opacity={0.6} />
-        </mesh>
-      )}
-    </group>
+      <Grid
+        args={[gridSize, gridSize]}
+        sectionColor="#a0a0a0"
+        cellColor="#e0e0e0"
+        fadeDistance={100}
+        position={[0, 0.01, 0]} // Zeminden biraz yukarıda göster
+      />
+    </>
   );
 };
 
-// DOĞRU EXPORT
 export default ModernGroundHandler;

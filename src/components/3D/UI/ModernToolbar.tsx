@@ -3,7 +3,6 @@ import { modernTheme } from './ModernTheme';
 
 export type ToolbarMode = 'view' | 'draw' | 'edit' | 'rack' | 'wall-edit';
 
-// ModernToolbar.tsx'te interface'e ekle:
 export interface ModernToolbarProps {
     mode: 'draw' | 'edit' | 'view' | 'rack' | 'wall-edit';
     onModeChange: (mode: 'draw' | 'edit' | 'view' | 'rack' | 'wall-edit') => void;
@@ -12,7 +11,7 @@ export interface ModernToolbarProps {
     onCancelDrawing: () => void;
     onSave: () => void;
     onLoad: () => void;
-    onStartRackPlacement: () => void; // EKLENDI
+    onStartRackPlacement: () => void;
     onCancelRackPlacement?: () => void;
     isDrawing: boolean;
     canComplete: boolean;
@@ -61,7 +60,7 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
 
   const toolbarStyle: React.CSSProperties = {
     position: 'fixed',
-    top: '20px',
+    top: '110px',
     left: '20px',
     background: modernTheme.colors.background.main,
     border: `1px solid ${modernTheme.colors.border.light}`,
@@ -98,7 +97,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
         <button
           key={button.mode}
           style={buttonStyle(mode === button.mode, button.color)}
-          onClick={() => onModeChange(button.mode)}
+          onClick={() => {
+            console.log(`[ModernToolbar] Mod değiştirme denendi: ${button.mode}`); // LOG EKLENDİ
+            onModeChange(button.mode);
+          }}
           disabled={rackPlacementMode && button.mode !== 'view'}
         >
           <span>{button.icon}</span>
@@ -120,7 +122,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
           {!isDrawing ? (
             <button
               style={buttonStyle(false, modernTheme.colors.primary)}
-              onClick={onStartDrawing}
+              onClick={() => {
+                console.log("[ModernToolbar] Çizime başlama denendi!"); // LOG EKLENDİ
+                onStartDrawing();
+              }}
             >
               <span>🎯</span>
               <span>Başla</span>
@@ -130,7 +135,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
               {canComplete && (
                 <button
                   style={buttonStyle(false, modernTheme.colors.success)}
-                  onClick={onCompleteDrawing}
+                  onClick={() => {
+                    console.log("[ModernToolbar] Çizimi tamamlama denendi!"); // LOG EKLENDİ
+                    onCompleteDrawing();
+                  }}
                 >
                   <span>✅</span>
                   <span>Tamamla</span>
@@ -138,7 +146,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
               )}
               <button
                 style={buttonStyle(false, modernTheme.colors.error)}
-                onClick={onCancelDrawing}
+                onClick={() => {
+                  console.log("[ModernToolbar] Çizimi iptal etme denendi!"); // LOG EKLENDİ
+                  onCancelDrawing();
+                }}
               >
                 <span>❌</span>
                 <span>İptal</span>
@@ -151,7 +162,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
       {rackPlacementMode && (
         <button
           style={buttonStyle(false, modernTheme.colors.error)}
-          onClick={onCancelRackPlacement}
+          onClick={() => {
+            console.log("[ModernToolbar] Raf yerleşimi iptal denendi!"); // LOG EKLENDİ
+            onCancelRackPlacement?.(); // Optional chaining ile güvenli çağrı
+          }}
         >
           <span>❌</span>
           <span>Raf İptal</span>
@@ -169,7 +183,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
       {/* File Operations */}
       <button
         style={buttonStyle(false, modernTheme.colors.accent)}
-        onClick={onSave}
+        onClick={() => {
+          console.log("[ModernToolbar] Kaydetme denendi!"); // LOG EKLENDİ
+          onSave();
+        }}
       >
         <span>💾</span>
         <span>Kaydet</span>
@@ -177,7 +194,10 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
 
       <button
         style={buttonStyle(false, modernTheme.colors.accent)}
-        onClick={onLoad}
+        onClick={() => {
+          console.log("[ModernToolbar] Yükleme denendi!"); // LOG EKLENDİ
+          onLoad();
+        }}
       >
         <span>📁</span>
         <span>Yükle</span>

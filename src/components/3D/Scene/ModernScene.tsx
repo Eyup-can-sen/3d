@@ -1,16 +1,21 @@
+// src/components/3D/Scene/ModernScene.tsx
+
 import React, { useState, useCallback, useMemo, Suspense, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, Html } from '@react-three/drei';
+import { type ThreeEvent } from '@react-three/fiber'; 
+
+import { OrbitControls, Environment, Html } from '@react-three/drei';
 import { useAdvancedWarehouseBuilder } from '../../../hooks/useAdvancedWarehouseBuilder';
 import { ModernWarehouse } from '../Warehouse/ModernWarehouse';
 import { ModernToolbar } from '../UI/ModernToolbar';
 import { ModernPropertiesPanel } from '../UI/ModernPropertiesPanel';
 import { ModernRackSystem } from '../Warehouse/ModernRackSystem';
-import ModernGroundHandler from '../Controls/ModernGroundHandler'; // DEFAULT IMPORT
+import ModernGroundHandler from '../Controls/ModernGroundHandler'; 
 import { WallEditor } from '../UI/WallEditor';
 import { RackConfigModal } from '../UI/RackConfigModal';
 import { modernTheme } from '../UI/ModernTheme';
+import ModernWarehouseCanvas from '../Warehouse/ModernWarehouseCanvas'; 
 
+// Arayüzler (ideal olarak, bu arayüzler ortak bir `types.ts` dosyasında olmalı)
 export interface CargoStats {
     total: number;
     delivered: number;
@@ -30,7 +35,7 @@ export interface RackConfig {
 
 export const ModernScene: React.FC = () => {
     const warehouseBuilder = useAdvancedWarehouseBuilder();
-    
+
     const {
         currentPlan,
         mode,
@@ -48,7 +53,7 @@ export const ModernScene: React.FC = () => {
         gridSize,
         setGridSize,
         startDrawing,
-        addPoint,
+        addPoint, 
         completeDrawing,
         addRack,
         selectRack,
@@ -61,32 +66,34 @@ export const ModernScene: React.FC = () => {
         cancelDrawing,
         updateWallHeight,
         updateWallThickness,
-        updateWallColor
+        updateWallColor,
+        updateMousePosition, // YENİ: useAdvancedWarehouseBuilder'dan alıyoruz
     } = warehouseBuilder;
 
-    // Local state
+    // Yerel Durum Yönetimi
     const [cargos] = useState<any[]>([]);
     const [rackPlacementMode, setRackPlacementMode] = useState(false);
     const [pendingRackConfig, setPendingRackConfig] = useState<RackConfig | null>(null);
-    const [showRackSettings, setShowRackSettings] = useState(false);
-    const [showCargoWizard, setShowCargoWizard] = useState(false);
+    const [showRackSettings, setShowRackSettings] = useState(false); 
+    const [showCargoWizard, setShowCargoWizard] = useState(false); 
     const [showRackConfigModal, setShowRackConfigModal] = useState(false);
 
-    // Camera state
-    const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([10, 10, 10]);
-    const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 0]);
+    // Refler (Kamera ve OrbitControls erişimi için) - Bunlar ModernWarehouseCanvas içinde yönetiliyor artık
+    const cameraRef = useRef<any>(null);
+    const orbitControlsRef = useRef<any>(null);
 
-    // Collision detection
+    // Raf Çakışma Kontrolü
     const checkRackCollision = useCallback((x: number, z: number, config: RackConfig) => {
         const { width, depth } = config.dimensions;
         const halfWidth = width / 2;
         const halfDepth = depth / 2;
-        
-        // Check rack-rack collision
+
         for (const rack of racks) {
+            if (selectedRack && rack.id === selectedRack) continue;
+
             const rackHalfWidth = rack.dimensions.width / 2;
             const rackHalfDepth = rack.dimensions.depth / 2;
-            
+
             if (
                 Math.abs(x - rack.position.x) < (halfWidth + rackHalfWidth + 0.5) &&
                 Math.abs(z - rack.position.z) < (halfDepth + rackHalfDepth + 0.5)
@@ -94,16 +101,18 @@ export const ModernScene: React.FC = () => {
                 return { valid: false, reason: 'Başka bir rafla çakışıyor (min 0.5m mesafe)' };
             }
         }
-        
-        // Check boundaries
+
+        if (!currentPlan.isCompleted) {
+            return { valid: false, reason: 'Depo planı tamamlanmadı.' };
+        }
         if (!isPointInside(x, z)) {
             return { valid: false, reason: 'Depo sınırları dışında' };
         }
-        
-        return { valid: true, reason: '' };
-    }, [racks, isPointInside]);
 
-    // Actions
+        return { valid: true, reason: '' };
+    }, [racks, isPointInside, currentPlan.isCompleted, selectedRack]);
+
+    // İşlemler
     const handleSave = useCallback(() => {
         const planData = {
             plan: currentPlan,
@@ -113,7 +122,7 @@ export const ModernScene: React.FC = () => {
         };
 
         localStorage.setItem(`modern-warehouse-${currentPlan.id}`, JSON.stringify(planData));
-        
+
         const areaText = currentPlan.area?.toFixed(2) || '0.00';
         alert(`✅ Depo kaydedildi!\n📊 Alan: ${areaText} m²\n📦 Raf: ${racks.length}\n🚛 Kargo: ${cargos.length}`);
     }, [currentPlan, racks, cargos]);
@@ -123,8 +132,6 @@ export const ModernScene: React.FC = () => {
             alert('⚠️ Önce depo planını tamamlayın!');
             return;
         }
-        
-        // Önce raf konfigürasyonu göster
         setShowRackConfigModal(true);
     }, [currentPlan.isCompleted]);
 
@@ -135,42 +142,79 @@ export const ModernScene: React.FC = () => {
         setMode('rack');
     }, [setMode]);
 
-    const handleRackPlacement = useCallback((x: number, z: number) => {
-        if (!rackPlacementMode || !pendingRackConfig) return;
-
-        const gridSpacing = 1;
-        const finalX = snapToGrid ? Math.round(x / gridSpacing) * gridSpacing : x;
-        const finalZ = snapToGrid ? Math.round(z / gridSpacing) * gridSpacing : z;
-
-        // Collision check
-        const collisionResult = checkRackCollision(finalX, finalZ, pendingRackConfig);
-        if (!collisionResult.valid) {
-            alert(`❌ ${collisionResult.reason}`);
-            return;
-        }
-
-        const rackData = {
-            type: pendingRackConfig.type,
-            position: { x: finalX, y: 0, z: finalZ },
-            dimensions: pendingRackConfig.dimensions,
-            rotation: pendingRackConfig.rotation,
-            levels: pendingRackConfig.levels,
-            capacity: pendingRackConfig.capacity,
-            material: pendingRackConfig.material,
-            color: pendingRackConfig.color,
-            tags: [],
-            notes: ''
+    // Grid'e oturtma fonksiyonu (ModernGroundHandler'da da var, ortak bir util'e taşınabilir)
+    const snapToGridPoint = useCallback((x: number, z: number) => {
+        if (!snapToGrid) return { x, z };
+        const spacing = 1; // GridSpacing'i burada sabitledik, ModernGroundHandler ile uyumlu olmalı
+        return {
+            x: Math.round(x / spacing) * spacing,
+            z: Math.round(z / spacing) * spacing
         };
+    }, [snapToGrid]);
 
-        const newRackId = addRack(rackData);
+    // 3D sahnesi için merkezi tıklama yöneticisi
+    const handleCanvasClick = useCallback((event: ThreeEvent<MouseEvent>) => {
+        console.log("[ModernScene] Canvas tıklandı!", event);
 
-        if (newRackId) {
-            setRackPlacementMode(false);
-            setPendingRackConfig(null);
-            setMode('view');
-            selectRack(newRackId);
+        // ModernGroundHandler tarafından bir tıklama olarak filtrelenmişse buraya geliriz.
+        if (event.point) {
+            const { x, z } = snapToGridPoint(event.point.x, event.point.z);
+            console.log(`[ModernScene] Canvas kesişim noktası: x=${x}, z=${z}. Mod: ${mode}, isDrawing: ${isDrawing}, rackPlacementMode: ${rackPlacementMode}`);
+
+            if (rackPlacementMode && pendingRackConfig) {
+                console.log("[ModernScene] Raf yerleştirme modu aktif. Raf yerleştiriliyor.");
+                const collisionResult = checkRackCollision(x, z, pendingRackConfig);
+                if (!collisionResult.valid) {
+                    alert(`❌ ${collisionResult.reason}`);
+                    return;
+                }
+
+                const rackData = {
+                    type: pendingRackConfig.type,
+                    position: { x: x, y: 0, z: z },
+                    dimensions: pendingRackConfig.dimensions,
+                    rotation: pendingRackConfig.rotation,
+                    levels: pendingRackConfig.levels,
+                    capacity: pendingRackConfig.capacity,
+                    material: pendingRackConfig.material,
+                    color: pendingRackConfig.color,
+                    tags: [],
+                    notes: ''
+                };
+                const newRackId = addRack(rackData);
+
+                if (newRackId) {
+                    setRackPlacementMode(false);
+                    setPendingRackConfig(null);
+                    setMode('view');
+                    selectRack(newRackId);
+                    console.log("[ModernScene] Raf başarıyla yerleştirildi.");
+                }
+
+            } else if (mode === 'draw' && isDrawing) {
+                console.log("[ModernScene] Çizim modu aktif. Nokta ekleniyor:", { x, z });
+                // Sadece noktayı ekle. useAdvancedWarehouseBuilder içindeki addPoint
+                // önceki noktayı başlangıç noktası olarak alıp çizimi devam ettirmeli.
+                addPoint(x, z);
+            } else {
+                setSelectedPoint(null);
+                setSelectedWall(null);
+                selectRack(null);
+            }
+        } else {
+            console.log("[ModernScene] Canvas tıklandı ama 3D nokta bulunamadı.");
+            if (mode === 'edit' || mode === 'wall-edit' || mode === 'rack' || mode === 'view') {
+                setSelectedPoint(null);
+                setSelectedWall(null);
+                selectRack(null);
+            }
         }
-    }, [rackPlacementMode, pendingRackConfig, snapToGrid, checkRackCollision, addRack, setMode, selectRack]);
+    }, [
+        rackPlacementMode, pendingRackConfig, mode, isDrawing, addPoint, 
+        snapToGridPoint, checkRackCollision, addRack, setMode, selectRack,
+        setSelectedPoint, setSelectedWall
+    ]);
+
 
     const handleCancelRackPlacement = useCallback(() => {
         setRackPlacementMode(false);
@@ -195,13 +239,7 @@ export const ModernScene: React.FC = () => {
         selectRack(rackId);
     }, [selectRack]);
 
-    const handleCanvasClick = useCallback((event: any) => {
-        if (rackPlacementMode && event.point) {
-            handleRackPlacement(event.point.x, event.point.z);
-        }
-    }, [rackPlacementMode, handleRackPlacement]);
-
-    // Memoized computed values
+    // Belleğe Alınmış Hesaplanan Değerler (Memoized Computed Values)
     const selectedRackData = useMemo(() => {
         return selectedRack ? racks.find(r => r.id === selectedRack) || null : null;
     }, [selectedRack, racks]);
@@ -215,7 +253,7 @@ export const ModernScene: React.FC = () => {
         };
     }, [cargos]);
 
-    // Memoized props objects
+    // Belleğe Alınmış Prop Nesneleri (Memoized Prop Objects)
     const warehouseProps = useMemo(() => ({
         points: currentPlan.points,
         walls: currentPlan.walls,
@@ -225,7 +263,11 @@ export const ModernScene: React.FC = () => {
         selectedPoint: selectedPoint?.id || null,
         selectedWall: selectedWall?.id || null,
         onPointClick: handlePointClick,
-        onWallClick: handleWallClick
+        onWallClick: handleWallClick,
+        previewLine,
+        mousePosition,
+        mode,
+        isDrawing
     }), [
         currentPlan.points,
         currentPlan.walls,
@@ -235,7 +277,11 @@ export const ModernScene: React.FC = () => {
         selectedPoint?.id,
         selectedWall?.id,
         handlePointClick,
-        handleWallClick
+        handleWallClick,
+        previewLine,
+        mousePosition,
+        mode,
+        isDrawing
     ]);
 
     const rackSystemProps = useMemo(() => ({
@@ -248,7 +294,9 @@ export const ModernScene: React.FC = () => {
         selectedCargo: null,
         onRackClick: handleRackClick,
         onRackUpdate: updateRack,
-        onCargoClick: (cargoId: string) => {},
+        onCargoClick: (cargoId: string) => { /* empty */ },
+        onRackAdd: addRack,
+        onCargoAdd: () => { /* empty */ },
         showLabels: true,
         showCapacity: true,
         showMeasurements: showMeasurements,
@@ -256,7 +304,7 @@ export const ModernScene: React.FC = () => {
         isPointInside,
         pendingRackConfig,
         rackPlacementMode
-    }), [racks, cargos, selectedRack, handleRackClick, updateRack, showMeasurements, isPointInside, pendingRackConfig, rackPlacementMode]);
+    }), [racks, cargos, selectedRack, handleRackClick, updateRack, showMeasurements, isPointInside, pendingRackConfig, rackPlacementMode, addRack]);
 
     const propertiesPanelProps = useMemo(() => ({
         currentPlan,
@@ -267,18 +315,16 @@ export const ModernScene: React.FC = () => {
         cargoStats,
         totalRacks: racks.length,
         cargos,
-        onUpdatePlan: (updates: any) => {
-            // Handle plan updates
-        },
+        onUpdatePlan: (updates: any) => { /* empty */ },
         onUpdateRack: (rackId: string, updates: any) => {
             updateRack(rackId, updates);
         },
         onDeleteRack: (rackId: string) => {
             deleteRack(rackId);
         },
-        onCargoSelect: (cargoId: string) => {},
-        onCargoEdit: (cargoId: string, updates: any) => {},
-        onCargoDelete: (cargoId: string) => {},
+        onCargoSelect: (cargoId: string) => { /* empty */ },
+        onCargoEdit: (cargoId: string, updates: any) => { /* empty */ },
+        onCargoDelete: (cargoId: string) => { /* empty */ },
         onAddCargo: () => setShowCargoWizard(true),
         onShowCargoWizard: () => setShowCargoWizard(true),
         onShowRackSettings: () => setShowRackSettings(true)
@@ -295,13 +341,13 @@ export const ModernScene: React.FC = () => {
     ]);
 
     const toolbarProps = useMemo(() => ({
-        mode: mode as any,
+        mode: mode as any, // Mode type casted as any to avoid potential type issues
         onModeChange: setMode,
         onStartDrawing: startDrawing,
         onCompleteDrawing: completeDrawing,
         onCancelDrawing: cancelDrawing,
         onSave: handleSave,
-        onLoad: () => {},
+        onLoad: () => { /* empty */ },
         onStartRackPlacement: handleStartRackPlacement,
         onCancelRackPlacement: handleCancelRackPlacement,
         isDrawing,
@@ -321,18 +367,15 @@ export const ModernScene: React.FC = () => {
         rackPlacementMode
     ]);
 
-    // Memoized components
+    // Belleğe Alınmış Bileşenler (Memoized Components)
     const MemoizedToolbar = React.memo(() => <ModernToolbar {...toolbarProps} />);
     const MemoizedPropertiesPanel = React.memo(() => <ModernPropertiesPanel {...propertiesPanelProps} />);
 
     return (
         <>
-            {/* UI Bileşenleri - Memoized */}
             <MemoizedToolbar />
-
             <MemoizedPropertiesPanel />
 
-            {/* Raf Konfigürasyon Modal */}
             {showRackConfigModal && (
                 <RackConfigModal
                     onSave={handleRackConfigSave}
@@ -340,7 +383,6 @@ export const ModernScene: React.FC = () => {
                 />
             )}
 
-            {/* Wall Editor */}
             {selectedWall && (
                 <WallEditor
                     wall={selectedWall}
@@ -351,20 +393,18 @@ export const ModernScene: React.FC = () => {
                 />
             )}
 
-            {/* Ana 3D Sahne */}
             <div style={{
-                width: '100vw',
+                width: '100%',
                 height: '100vh',
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                background: 'linear-gradient(135deg, #5f6875ff 20%, #484e57ff 100%)',
                 position: 'relative',
                 overflow: 'hidden'
             }}>
-                {/* Status Bar */}
+                {/* Durum Bilgisi Ekranı */}
                 <div style={{
                     position: 'absolute',
                     top: '80px',
                     left: '20px',
-                    right: '380px',
                     height: '40px',
                     background: modernTheme.colors.background.main,
                     border: `1px solid ${modernTheme.colors.border.light}`,
@@ -389,6 +429,14 @@ export const ModernScene: React.FC = () => {
                             <span>📊 {currentPlan.area?.toFixed(1) || '0.0'} m²</span>
                         </>
                     )}
+                    {(mode === 'draw' && isDrawing) && (
+                        <>
+                            <span>•</span>
+                            <span style={{ color: modernTheme.colors.primary }}>
+                                ✏️ Çizim modu aktif - tıklayarak nokta ekleyin
+                            </span>
+                        </>
+                    )}
                     {rackPlacementMode && (
                         <>
                             <span>•</span>
@@ -399,92 +447,21 @@ export const ModernScene: React.FC = () => {
                     )}
                 </div>
 
-                {/* 3D Canvas */}
-                <Canvas
-                    shadows
-                    camera={{
-                        position: cameraPosition,
-                        fov: 60,
-                        near: 0.1,
-                        far: 1000
-                    }}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        cursor: rackPlacementMode ? 'crosshair' : 'default'
-                    }}
-                    onClick={handleCanvasClick}
-                >
-                    {/* Lighting */}
-                    <ambientLight intensity={0.4} />
-                    <directionalLight
-                        position={[10, 10, 5]}
-                        intensity={1}
-                        castShadow
-                        shadow-mapSize-width={2048}
-                        shadow-mapSize-height={2048}
-                        shadow-camera-far={50}
-                        shadow-camera-left={-10}
-                        shadow-camera-right={10}
-                        shadow-camera-top={10}
-                        shadow-camera-bottom={-10}
-                    />
-                    <pointLight position={[-10, -10, -10]} intensity={0.3} />
+                {/* Ana 3D Canvas */}
+                <ModernWarehouseCanvas
+                    rackPlacementMode={rackPlacementMode}
+                    isDrawing={isDrawing}
+                    mode={mode}
+                    handleCanvasClick={handleCanvasClick} 
+                    mousePosition={mousePosition}
+                    gridSize={gridSize}
+                    snapToGrid={snapToGrid}
+                    pendingRackConfig={pendingRackConfig}
+                    warehouseProps={warehouseProps}
+                    rackSystemProps={rackSystemProps}
+                    updateMousePosition={updateMousePosition} // YENİ: updateMousePosition prop'u iletiliyor
+                />
 
-                    {/* Camera Controls */}
-                    <OrbitControls
-                        target={cameraTarget}
-                        enablePan={true}
-                        enableZoom={true}
-                        enableRotate={true}
-                        minDistance={2}
-                        maxDistance={50}
-                        maxPolarAngle={Math.PI / 2.1}
-                        onChange={(e) => {
-                            if (e && e.target) {
-                                setCameraPosition([
-                                    e.target.object.position.x,
-                                    e.target.object.position.y,
-                                    e.target.object.position.z
-                                ]);
-                            }
-                        }}
-                    />
-
-                    {/* Environment */}
-                    <Environment preset="warehouse" />
-
-                    {/* Ground Handler */}
-                    <ModernGroundHandler
-                        showGrid={true}
-                        gridSize={gridSize}
-                        snapToGrid={snapToGrid}
-                        gridSpacing={1}
-                        onRackPlacement={handleRackPlacement}
-                        rackPlacementMode={rackPlacementMode}
-                        pendingRackConfig={pendingRackConfig}
-                    />
-
-                    {/* 3D Components */}
-                    <Suspense fallback={
-                        <Html center>
-                            <div style={{
-                                background: modernTheme.colors.primary,
-                                color: 'white',
-                                padding: '12px 20px',
-                                borderRadius: modernTheme.borderRadius.lg,
-                                fontSize: '14px',
-                                fontWeight: '600'
-                            }}>
-                                🔄 Yükleniyor...
-                            </div>
-                        </Html>
-                    }>
-                        <ModernWarehouse {...warehouseProps} />
-
-                        <ModernRackSystem {...rackSystemProps} />
-                    </Suspense>
-                </Canvas>
             </div>
         </>
     );
