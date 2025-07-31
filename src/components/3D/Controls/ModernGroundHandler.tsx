@@ -14,6 +14,7 @@ interface ModernGroundHandlerProps {
   onRackPlacement?: (x: number, z: number) => void;
   rackPlacementMode?: boolean;
   pendingRackConfig?: RackConfig | null;
+  // ÇIZIM PARAMETRELERINI SIL
 }
 
 export const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
@@ -24,6 +25,7 @@ export const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
   onRackPlacement,
   rackPlacementMode = false,
   pendingRackConfig
+  // ÇIZIM PARAMETRELERINI SIL
 }) => {
   const { camera, scene, gl } = useThree();
   const planeRef = useRef<Mesh>(null);
@@ -72,7 +74,7 @@ export const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
     }
   }, [camera, snapToGridPoint, updateMousePosition, gl.domElement]);
 
-  // Click işleme
+  // Click işleme - SADECE ESKİ SİSTEM
   const handleClick = useCallback((event: MouseEvent) => {
     if (mode === 'draw') {
       event.preventDefault();
@@ -146,21 +148,21 @@ export const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
         </mesh>
       )}
 
-      {/* Noktaları göster */}
+      {/* ESKİ SİSTEM - Noktaları göster */}
       {currentPlan.points.map((point, index) => (
         <group key={point.id}>
           <mesh position={[point.x, 0.2, point.z]}>
             <sphereGeometry args={[0.2, 16, 16]} />
             <meshStandardMaterial 
-              color={index === 0 ? '#e74c3c' : '#4a90e2'} 
-              emissive={index === 0 ? '#e74c3c' : '#4a90e2'}
+              color={index === 0 ? modernTheme.colors.error : modernTheme.colors.primary}
+              emissive={index === 0 ? modernTheme.colors.error : modernTheme.colors.primary}
               emissiveIntensity={0.3}
             />
           </mesh>
         </group>
       ))}
 
-      {/* Preview line */}
+      {/* ESKİ SİSTEM - Preview line */}
       {previewLine && mode === 'draw' && (
         <mesh
           position={[
@@ -174,12 +176,11 @@ export const ModernGroundHandler: React.FC<ModernGroundHandlerProps> = ({
           ), 0]}
         >
           <boxGeometry args={[previewLine.distance, 0.02, 0.1]} />
-          <meshBasicMaterial color="#4a90e2" transparent opacity={0.6} />
+          <meshBasicMaterial color={modernTheme.colors.accent} transparent opacity={0.6} />
         </mesh>
       )}
     </group>
   );
 };
 
-// DOĞRU EXPORT
 export default ModernGroundHandler;

@@ -2,11 +2,12 @@ import React, { useState, useCallback, useMemo, Suspense, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, Html } from '@react-three/drei';
 import { useAdvancedWarehouseBuilder } from '../../../hooks/useAdvancedWarehouseBuilder';
+import { SimpleDrawingSystem } from '../Drawing/SimpleDrawingSystem'; // SADECE BU KALSIN
 import { ModernWarehouse } from '../Warehouse/ModernWarehouse';
 import { ModernToolbar } from '../UI/ModernToolbar';
 import { ModernPropertiesPanel } from '../UI/ModernPropertiesPanel';
 import { ModernRackSystem } from '../Warehouse/ModernRackSystem';
-import ModernGroundHandler from '../Controls/ModernGroundHandler'; // DEFAULT IMPORT
+import ModernGroundHandler from '../Controls/ModernGroundHandler';
 import { WallEditor } from '../UI/WallEditor';
 import { RackConfigModal } from '../UI/RackConfigModal';
 import { modernTheme } from '../UI/ModernTheme';
@@ -30,6 +31,9 @@ export interface RackConfig {
 
 export const ModernScene: React.FC = () => {
     const warehouseBuilder = useAdvancedWarehouseBuilder();
+    
+    // YENİ - Çizim sistemi
+    const [showDrawingSystem, setShowDrawingSystem] = useState(false);
     
     const {
         currentPlan,
@@ -327,165 +331,220 @@ export const ModernScene: React.FC = () => {
 
     return (
         <>
-            {/* UI Bileşenleri - Memoized */}
-            <MemoizedToolbar />
-
-            <MemoizedPropertiesPanel />
-
-            {/* Raf Konfigürasyon Modal */}
-            {showRackConfigModal && (
-                <RackConfigModal
-                    onSave={handleRackConfigSave}
-                    onCancel={handleCancelRackPlacement}
-                />
-            )}
-
-            {/* Wall Editor */}
-            {selectedWall && (
-                <WallEditor
-                    wall={selectedWall}
-                    onUpdateHeight={updateWallHeight}
-                    onUpdateThickness={updateWallThickness}
-                    onUpdateColor={updateWallColor}
-                    onClose={() => setSelectedWall(null)}
-                />
-            )}
-
-            {/* Ana 3D Sahne */}
-            <div style={{
-                width: '100vw',
-                height: '100vh',
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                {/* Status Bar */}
-                <div style={{
-                    position: 'absolute',
-                    top: '80px',
-                    left: '20px',
-                    right: '380px',
-                    height: '40px',
-                    background: modernTheme.colors.background.main,
-                    border: `1px solid ${modernTheme.colors.border.light}`,
-                    borderRadius: modernTheme.borderRadius.lg,
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 16px',
-                    fontSize: '12px',
-                    color: modernTheme.colors.text.primary,
-                    boxShadow: modernTheme.shadows.sm,
-                    zIndex: 10,
-                    gap: '16px'
-                }}>
-                    <span>🏪 {currentPlan.name}</span>
-                    <span>•</span>
-                    <span>📍 {currentPlan.points.length} nokta</span>
-                    <span>•</span>
-                    <span>🧱 {currentPlan.walls.length} duvar</span>
-                    {currentPlan.isCompleted && (
-                        <>
-                            <span>•</span>
-                            <span>📊 {currentPlan.area?.toFixed(1) || '0.0'} m²</span>
-                        </>
-                    )}
-                    {rackPlacementMode && (
-                        <>
-                            <span>•</span>
-                            <span style={{ color: modernTheme.colors.warning }}>
-                                📦 Raf yerleştirme modu aktif - tıklayarak yerleştirin
-                            </span>
-                        </>
-                    )}
+            {/* YENİ - Çizim Sistemi */}
+            {showDrawingSystem ? (
+                <div style={{ width: '100vw', height: '100vh' }}>
+                    <Canvas 
+                        camera={{ position: [15, 15, 15], fov: 50 }}
+                        style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}
+                    >
+                        <ambientLight intensity={0.4} />
+                        <directionalLight position={[10, 10, 5]} intensity={0.8} castShadow />
+                        <OrbitControls 
+                            enablePan={true}
+                            enableZoom={true}
+                            enableRotate={true}
+                            maxPolarAngle={Math.PI / 2}
+                        />
+                        
+                        <SimpleDrawingSystem
+                            onComplete={(data) => {
+                                console.log('Depo tamamlandı:', data);
+                                alert(`✅ Depo oluşturuldu!\n📊 Alan: ${data.area.toFixed(1)} m²\n📍 Nokta: ${data.points.length}\n🚪 Kapı: ${data.doors.length}\n📏 Yükseklik: ${data.height}m`);
+                                setShowDrawingSystem(false);
+                            }}
+                            onCancel={() => setShowDrawingSystem(false)}
+                        />
+                    </Canvas>
                 </div>
-
-                {/* 3D Canvas */}
-                <Canvas
-                    shadows
-                    camera={{
-                        position: cameraPosition,
-                        fov: 60,
-                        near: 0.1,
-                        far: 1000
-                    }}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        cursor: rackPlacementMode ? 'crosshair' : 'default'
-                    }}
-                    onClick={handleCanvasClick}
-                >
-                    {/* Lighting */}
-                    <ambientLight intensity={0.4} />
-                    <directionalLight
-                        position={[10, 10, 5]}
-                        intensity={1}
-                        castShadow
-                        shadow-mapSize-width={2048}
-                        shadow-mapSize-height={2048}
-                        shadow-camera-far={50}
-                        shadow-camera-left={-10}
-                        shadow-camera-right={10}
-                        shadow-camera-top={10}
-                        shadow-camera-bottom={-10}
-                    />
-                    <pointLight position={[-10, -10, -10]} intensity={0.3} />
-
-                    {/* Camera Controls */}
-                    <OrbitControls
-                        target={cameraTarget}
-                        enablePan={true}
-                        enableZoom={true}
-                        enableRotate={true}
-                        minDistance={2}
-                        maxDistance={50}
-                        maxPolarAngle={Math.PI / 2.1}
-                        onChange={(e) => {
-                            if (e && e.target) {
-                                setCameraPosition([
-                                    e.target.object.position.x,
-                                    e.target.object.position.y,
-                                    e.target.object.position.z
-                                ]);
-                            }
-                        }}
-                    />
-
-                    {/* Environment */}
-                    <Environment preset="warehouse" />
-
-                    {/* Ground Handler */}
-                    <ModernGroundHandler
-                        showGrid={true}
-                        gridSize={gridSize}
-                        snapToGrid={snapToGrid}
-                        gridSpacing={1}
-                        onRackPlacement={handleRackPlacement}
-                        rackPlacementMode={rackPlacementMode}
-                        pendingRackConfig={pendingRackConfig}
-                    />
-
-                    {/* 3D Components */}
-                    <Suspense fallback={
-                        <Html center>
-                            <div style={{
-                                background: modernTheme.colors.primary,
-                                color: 'white',
+            ) : (
+                <>
+                    {/* YENİ - Çizim Butonu */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '20px',
+                        left: '300px',
+                        zIndex: 1000
+                    }}>
+                        <button
+                            onClick={() => setShowDrawingSystem(true)}
+                            style={{
                                 padding: '12px 20px',
-                                borderRadius: modernTheme.borderRadius.lg,
-                                fontSize: '14px',
-                                fontWeight: '600'
-                            }}>
-                                🔄 Yükleniyor...
-                            </div>
-                        </Html>
-                    }>
-                        <ModernWarehouse {...warehouseProps} />
+                                background: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            🏗️ Zemin Çiz
+                        </button>
+                    </div>
 
-                        <ModernRackSystem {...rackSystemProps} />
-                    </Suspense>
-                </Canvas>
-            </div>
+                    {/* MEVCUT KODLAR */}
+                    <MemoizedToolbar />
+
+                    <MemoizedPropertiesPanel />
+
+                    {/* Raf Konfigürasyon Modal */}
+                    {showRackConfigModal && (
+                        <RackConfigModal
+                            onSave={handleRackConfigSave}
+                            onCancel={handleCancelRackPlacement}
+                        />
+                    )}
+
+                    {/* Wall Editor */}
+                    {selectedWall && (
+                        <WallEditor
+                            wall={selectedWall}
+                            onUpdateHeight={updateWallHeight}
+                            onUpdateThickness={updateWallThickness}
+                            onUpdateColor={updateWallColor}
+                            onClose={() => setSelectedWall(null)}
+                        />
+                    )}
+
+                    {/* Ana 3D Sahne */}
+                    <div style={{
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        {/* Status Bar */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '80px',
+                            left: '20px',
+                            right: '380px',
+                            height: '40px',
+                            background: modernTheme.colors.background.main,
+                            border: `1px solid ${modernTheme.colors.border.light}`,
+                            borderRadius: modernTheme.borderRadius.lg,
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '0 16px',
+                            fontSize: '12px',
+                            color: modernTheme.colors.text.primary,
+                            boxShadow: modernTheme.shadows.sm,
+                            zIndex: 10,
+                            gap: '16px'
+                        }}>
+                            <span>🏪 {currentPlan.name}</span>
+                            <span>•</span>
+                            <span>📍 {currentPlan.points.length} nokta</span>
+                            <span>•</span>
+                            <span>🧱 {currentPlan.walls.length} duvar</span>
+                            {currentPlan.isCompleted && (
+                                <>
+                                    <span>•</span>
+                                    <span>📊 {currentPlan.area?.toFixed(1) || '0.0'} m²</span>
+                                </>
+                            )}
+                            {rackPlacementMode && (
+                                <>
+                                    <span>•</span>
+                                    <span style={{ color: modernTheme.colors.warning }}>
+                                        📦 Raf yerleştirme modu aktif - tıklayarak yerleştirin
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
+                        {/* 3D Canvas */}
+                        <Canvas
+                            shadows
+                            camera={{
+                                position: cameraPosition,
+                                fov: 60,
+                                near: 0.1,
+                                far: 1000
+                            }}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                cursor: rackPlacementMode ? 'crosshair' : 'default'
+                            }}
+                            onClick={handleCanvasClick}
+                        >
+                            {/* Lighting */}
+                            <ambientLight intensity={0.4} />
+                            <directionalLight
+                                position={[10, 10, 5]}
+                                intensity={1}
+                                castShadow
+                                shadow-mapSize-width={2048}
+                                shadow-mapSize-height={2048}
+                                shadow-camera-far={50}
+                                shadow-camera-left={-10}
+                                shadow-camera-right={10}
+                                shadow-camera-top={10}
+                                shadow-camera-bottom={-10}
+                            />
+                            <pointLight position={[-10, -10, -10]} intensity={0.3} />
+
+                            {/* Camera Controls */}
+                            <OrbitControls
+                                target={cameraTarget}
+                                enablePan={true}
+                                enableZoom={true}
+                                enableRotate={true}
+                                minDistance={2}
+                                maxDistance={50}
+                                maxPolarAngle={Math.PI / 2.1}
+                                onChange={(e) => {
+                                    if (e && e.target) {
+                                        setCameraPosition([
+                                            e.target.object.position.x,
+                                            e.target.object.position.y,
+                                            e.target.object.position.z
+                                        ]);
+                                    }
+                                }}
+                            />
+
+                            {/* Environment */}
+                            <Environment preset="warehouse" />
+
+                            {/* Ground Handler */}
+                            <ModernGroundHandler
+                                showGrid={true}
+                                gridSize={gridSize}
+                                snapToGrid={snapToGrid}
+                                gridSpacing={1}
+                                onRackPlacement={handleRackPlacement}
+                                rackPlacementMode={rackPlacementMode}
+                                pendingRackConfig={pendingRackConfig}
+                            />
+
+                            {/* 3D Components */}
+                            <Suspense fallback={
+                                <Html center>
+                                    <div style={{
+                                        background: modernTheme.colors.primary,
+                                        color: 'white',
+                                        padding: '12px 20px',
+                                        borderRadius: modernTheme.borderRadius.lg,
+                                        fontSize: '14px',
+                                        fontWeight: '600'
+                                    }}>
+                                        🔄 Yükleniyor...
+                                    </div>
+                                </Html>
+                            }>
+                                <ModernWarehouse {...warehouseProps} />
+
+                                <ModernRackSystem {...rackSystemProps} />
+                            </Suspense>
+                        </Canvas>
+                    </div>
+                </>
+            )}
         </>
     );
 };
