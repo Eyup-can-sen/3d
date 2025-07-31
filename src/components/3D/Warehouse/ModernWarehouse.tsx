@@ -31,7 +31,7 @@ export interface ModernWarehouseProps {
     // New props from ModernScene.tsx
     previewLine: { start: Point; end: MousePosition; distance: number; angle: number; } | null;
     mousePosition: MousePosition;
-      DrawingMode; // 'draw' | 'edit' | 'view' | 'rack'
+    mode: DrawingMode; // 'draw' | 'edit' | 'view' | 'rack'
     isDrawing: boolean;
 }
 
