@@ -17,7 +17,7 @@ function App() {
       <Routes>
         {/* Giriş yapmamış kullanıcılar için herkese açık rotalar */}
         <Route path="/" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage/>} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
