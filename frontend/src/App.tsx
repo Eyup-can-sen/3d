@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DepoEkle from './pages/depo-ekle';
 import Depolarim from './pages/depolarim'
+import AcikDepoEklePage from "./pages/acik-depo-ekle";
 
 // AuthRoute bileşenini import edin
 import AuthRoute from "./components/AuthRoute";
@@ -22,6 +23,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/acik-depo-ekle" element={<AcikDepoEklePage />} />
         {/* Giriş yapmış kullanıcılar için korumalı rotalar */}
         <Route
           path="/home"

@@ -1,6 +1,7 @@
+
 import React from 'react';
 
-export const Dashboard = () => {
+export const Home = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans">
       <header className="flex justify-between items-center mb-12">
@@ -17,6 +18,12 @@ export const Dashboard = () => {
             className="px-6 py-3 bg-white text-indigo-600 font-semibold border border-indigo-600 rounded-lg shadow-md hover:bg-gray-100 transition-colors duration-300"
           >
             Depo Ekle
+          </a>
+          <a
+            href="/acik-depo-ekle"
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300"
+          >
+            Açık Depo Ekle
           </a>
         </div>
       </header>
@@ -72,4 +79,4 @@ export const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Home;

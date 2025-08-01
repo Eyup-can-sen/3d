@@ -1,0 +1,25 @@
+# Flask web framework
+Flask==2.3.3 # Kullandığınız Flask sürümüne göre değişebilir. Genellikle en son stabil sürüm iyidir.
+
+# CORS (Cross-Origin Resource Sharing) desteği için
+Flask-CORS==4.0.0
+
+# PostgreSQL veritabanı bağlayıcısı
+psycopg2-binary==2.9.9 # Binaries ile kurulumu daha kolaydır.
+
+# JWT (JSON Web Token) ile kimlik doğrulama için
+PyJWT==2.8.0 # JWT token oluşturma ve doğrulama
+
+# Şifre hashleme ve doğrulama için (Flask'ta zaten Werkzeug ile gelir, ama açıkça eklemek iyi olabilir)
+Werkzeug==2.3.7 # Flask'ın bir bağımlılığıdır.
+
+# Ortam değişkenlerini (.env dosyasından) yüklemek için
+python-dotenv==1.0.1
+
+# E-posta gönderme için
+Flask-Mail==0.9.1 # Flask için e-posta entegrasyonu
+
+# Diğer olası bağımlılıklar (uygulamanız büyüdükçe eklenebilir)
+# python-dateutil==2.8.2 # Tarih/saat işlemleri için bazen faydalı olabilir
+# SQLAlchemy # Eğer ORM kullanmaya karar verirseniz
+# Flask-SQLAlchemy # SQLAlchemy'yi Flask ile entegre etmek için
