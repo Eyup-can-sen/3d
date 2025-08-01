@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { FaArrowLeft, FaPlus, FaSave } from 'react-icons/fa';
 import { MapSelector } from './MapSelector';
 import { AreaBounds, NewWarehouseData } from '../types';
 import { calculateArea, formatArea, createWarehousePayload } from '../utils';
@@ -55,63 +55,64 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900 text-white font-sans p-8 md:p-12">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={onBack}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              disabled={saving}
-            >
-              ← Geri
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Yeni Depo Ekle</h1>
-              <p className="text-gray-600">Haritadan alan seçin ve depo bilgilerini girin</p>
-            </div>
+      <div className="mb-12">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="flex items-center space-x-2 p-3 text-slate-400 hover:text-white hover:bg-slate-700 rounded-full transition-all transform hover:-translate-x-1"
+            disabled={saving}
+          >
+            <FaArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="text-4xl font-extrabold text-white">Yeni Depo Ekle</h1>
+            <p className="text-slate-400 mt-2 text-lg">Haritadan alan seçin ve depo bilgilerini girin</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Sol: Harita */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="space-y-6">
+            <div className="bg-slate-800 rounded-3xl shadow-2xl p-6 transition-all duration-300 hover:shadow-indigo-500/20">
+              <h3 className="text-xl font-bold text-white mb-4">
                 Alan Seçimi
                 {selectedArea && (
-                  <span className="ml-2 text-sm text-green-600">
+                  <span className="ml-4 text-sm text-green-400 font-semibold">
                     ✅ {formatArea(calculateArea(selectedArea))} seçildi
                   </span>
                 )}
               </h3>
               
-              <MapSelector
-                onAreaSelect={handleAreaSelect}
-                isSelecting={isAddingArea}
-              />
+              <div className="w-full h-80 bg-slate-700 rounded-2xl overflow-hidden">
+                <MapSelector
+                  onAreaSelect={handleAreaSelect}
+                  isSelecting={isAddingArea}
+                />
+              </div>
               
-              <div className="mt-4 flex justify-between">
+              <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4">
                 <button
                   onClick={() => setIsAddingArea(!isAddingArea)}
                   disabled={saving}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                  className={`flex-1 py-3 px-4 rounded-full font-bold transition-all transform hover:-translate-y-1 flex items-center justify-center space-x-2 ${
                     isAddingArea
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-green-600 text-white hover:bg-green-700'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-500/20 hover:bg-red-700'
+                      : 'bg-green-600 text-white shadow-lg shadow-green-500/20 hover:bg-green-700'
                   } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {isAddingArea ? 'Seçimi İptal Et' : 'Yeni Alan Seç'}
+                  <FaPlus className="w-4 h-4" />
+                  <span>{isAddingArea ? 'Seçimi İptal Et' : 'Yeni Alan Seç'}</span>
                 </button>
                 
                 {selectedArea && (
                   <button
                     onClick={() => setSelectedArea(null)}
                     disabled={saving}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 px-4 bg-slate-700 text-slate-200 font-semibold rounded-full hover:bg-slate-600 transition-colors disabled:opacity-50"
                   >
                     Seçimi Temizle
                   </button>
@@ -121,13 +122,13 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
           </div>
 
           {/* Sağ: Form */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Depo Bilgileri</h3>
+          <div className="space-y-6">
+            <div className="bg-slate-800 rounded-3xl shadow-2xl p-6 transition-all duration-300 hover:shadow-indigo-500/20">
+              <h3 className="text-xl font-bold text-white mb-4">Depo Bilgileri</h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Depo Adı *
                   </label>
                   <input
@@ -136,13 +137,13 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
                     onChange={(e) => handleInputChange('ad', e.target.value)}
                     placeholder="Örn: İstanbul Merkez Depo"
                     disabled={saving}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-2xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Konum
                   </label>
                   <input
@@ -151,19 +152,19 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
                     onChange={(e) => handleInputChange('konum', e.target.value)}
                     placeholder="Örn: İstanbul, Avrupa Yakası"
                     disabled={saving}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-2xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Depo Tipi
                   </label>
                   <select
                     value={formData.tipi}
                     onChange={(e) => handleInputChange('tipi', e.target.value)}
                     disabled={saving}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
                   >
                     <option value="acik_depo">Açık Depo</option>
                     <option value="kapali_depo">Kapalı Depo</option>
@@ -174,7 +175,7 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
                       Kapasite (birim)
                     </label>
                     <input
@@ -183,12 +184,12 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
                       onChange={(e) => handleInputChange('kapasite', parseInt(e.target.value) || 0)}
                       placeholder="Otomatik hesaplanacak"
                       disabled={saving}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-2xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
                       Yükseklik (m)
                     </label>
                     <input
@@ -197,13 +198,13 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
                       onChange={(e) => handleInputChange('yukseklik', parseInt(e.target.value) || 0)}
                       placeholder="5"
                       disabled={saving}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-2xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Açıklama
                   </label>
                   <textarea
@@ -212,14 +213,14 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
                     placeholder="Depo hakkında detaylı bilgi..."
                     rows={3}
                     disabled={saving}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-2xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
                   />
                 </div>
 
                 {selectedArea && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Seçilen Alan Bilgileri</h4>
-                    <div className="text-sm text-blue-800 space-y-1">
+                  <div className="bg-indigo-500/20 border border-indigo-400 rounded-xl p-4">
+                    <h4 className="font-bold text-indigo-300 mb-2">Seçilen Alan Bilgileri</h4>
+                    <div className="text-sm text-indigo-400 space-y-1">
                       <div>📏 Alan: {formatArea(calculateArea(selectedArea))}</div>
                       <div>📍 Koordinat: {selectedArea.northeast.lat.toFixed(6)}, {selectedArea.northeast.lng.toFixed(6)}</div>
                       <div>📍 Koordinat: {selectedArea.southwest.lat.toFixed(6)}, {selectedArea.southwest.lng.toFixed(6)}</div>
@@ -228,23 +229,26 @@ export const AddWarehouse: React.FC<AddWarehouseProps> = ({
                 )}
               </div>
 
-              <div className="mt-6 flex space-x-3">
+              <div className="mt-8">
                 <button
                   onClick={handleSave}
                   disabled={!selectedArea || !formData.ad.trim() || saving}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center ${
+                  className={`w-full py-4 px-6 rounded-full font-bold transition-all transform hover:scale-105 flex items-center justify-center space-x-3 ${
                     selectedArea && formData.ad.trim() && !saving
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700'
+                      : 'bg-slate-700 text-slate-400 cursor-not-allowed'
                   }`}
                 >
                   {saving ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Kaydediliyor...
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      <span>Kaydediliyor...</span>
                     </>
                   ) : (
-                    'Depoyu Kaydet'
+                    <>
+                      <FaSave className="w-5 h-5" />
+                      <span>Depoyu Kaydet</span>
+                    </>
                   )}
                 </button>
               </div>

@@ -13,7 +13,7 @@ def get_db_connection():
             host='localhost',                    # Doğrudan URI'den gelen host
             database='AKYAPI_3D_WAREHOUSE',      # Doğrudan URI'den gelen veritabanı adı
             user='postgres',                     # Doğrudan URI'den gelen kullanıcı adı
-            password='2a09e4b709a04ab0830cadf9ed824f39'                # Doğrudan URI'den gelen şifre
+            password='Ramazan586'                # Doğrudan URI'den gelen şifre
         )
         return conn
     except psycopg2.Error as e:

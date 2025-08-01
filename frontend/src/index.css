@@ -22,7 +22,7 @@ html, body, #root { /* #root yerine React uygulamanızın monte edildiği elemen
   height: 100%; /* Tarayıcı penceresinin (viewport) tüm yüksekliğini kapla */
   margin: 0; /* Varsayılan dış boşlukları sıfırla */
   padding: 0; /* Varsayılan iç boşlukları sıfırla */
-  overflow: hidden; /* Dikey veya yatay kaydırmayı engelle */
+  /* overflow: hidden; Dikey veya yatay kaydırmayı engelle */
 }
 
 body {
