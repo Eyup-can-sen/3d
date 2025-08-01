@@ -1,7 +1,7 @@
 // src/components/Sidebar.tsx
 
 import React from 'react';
-import { Link, useNavigate } from "react-router-dom"; // useNavigate'ı içe aktarıyoruz
+import { NavLink, useNavigate } from "react-router-dom";
 import {
     HomeIcon,
     BuildingOffice2Icon,
@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/solid';
 
 const Sidebar = () => {
-    const navigate = useNavigate(); // useNavigate hook'unu kullanıyoruz
+    const navigate = useNavigate();
 
     const user = {
         name: "Ramazan Karatut",
@@ -26,6 +26,15 @@ const Sidebar = () => {
         localStorage.removeItem("token");
         navigate("/");
     };
+
+    // NavLink için stil belirleme fonksiyonu
+    // 'isActive' parametresinin tipini açıkça boolean olarak belirtiyoruz.
+    const activeLink = ({ isActive }: { isActive: boolean }) =>
+        `flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 ${
+            isActive
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+        }`;
 
     return (
         <aside className="fixed top-0 left-0 h-screen w-64 bg-slate-800 p-6 flex flex-col justify-start border-r border-slate-700 shadow-xl overflow-y-auto">
@@ -46,39 +55,27 @@ const Sidebar = () => {
 
             {/* Navigasyon Linkleri */}
             <nav className="space-y-2">
-                <Link
-                    to="/home"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                >
+                <NavLink to="/home" className={activeLink}>
                     <HomeIcon className="h-5 w-5" />
                     <span className="font-semibold">Anasayfa</span>
-                </Link>
-                <Link
-                    to="/depolarim"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                >
+                </NavLink>
+                <NavLink to="/depolarim" className={activeLink}>
                     <BuildingOffice2Icon className="h-5 w-5" />
                     <span className="font-semibold">Depolarım</span>
-                </Link>
-                <Link
-                    to="/raporlar"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                >
+                </NavLink>
+                <NavLink to="/raporlar" className={activeLink}>
                     <ChartPieIcon className="h-5 w-5" />
                     <span className="font-semibold">Raporlar</span>
-                </Link>
-                <Link
-                    to="/acik-depo-ekle"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                >
+                </NavLink>
+                <NavLink to="/acik-depo-ekle" className={activeLink}>
                     <ArrowTrendingUpIcon className="h-5 w-5" />
                     <span className="font-semibold">Açık Depo</span>
-                </Link>
+                </NavLink>
                 
                 {/* Çıkış Butonu */}
                 <button
-                    onClick={handleLogout} // onClick olay dinleyicisi eklendi
-                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-400 hover:bg-red-900 hover:bg-opacity-50 transition-colors duration-200 mt-8" // Boşluk için mt-8 eklendi
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-400 hover:bg-red-900 hover:bg-opacity-50 transition-colors duration-200 mt-8"
                 >
                     <ArrowLeftOnRectangleIcon className="h-5 w-5" />
                     <span className="font-semibold">Çıkış Yap</span>
