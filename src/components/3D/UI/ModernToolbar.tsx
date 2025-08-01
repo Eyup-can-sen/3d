@@ -60,7 +60,7 @@ export const ModernToolbar: React.FC<ModernToolbarProps> = ({
 
   const toolbarStyle: React.CSSProperties = {
     position: 'fixed',
-    top: '110px',
+    top: '80px',
     left: '20px',
     background: modernTheme.colors.background.main,
     border: `1px solid ${modernTheme.colors.border.light}`,

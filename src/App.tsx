@@ -7,9 +7,11 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import HomePage from "./pages/HomePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import DepoEkle from './pages/depo-ekle';
+import Depolarim from './pages/depolarim'
 
 // AuthRoute bileşenini import edin
-import AuthRoute from "./components/AuthRoute"; 
+import AuthRoute from "./components/AuthRoute";
 
 function App() {
   return (
@@ -17,32 +19,37 @@ function App() {
       <Routes>
         {/* Giriş yapmamış kullanıcılar için herkese açık rotalar */}
         <Route path="/" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage/>} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-
         {/* Giriş yapmış kullanıcılar için korumalı rotalar */}
-        <Route 
-          path="/home" 
+        <Route
+          path="/home"
           element={
             <AuthRoute>
               <HomePage />
             </AuthRoute>
-          } 
+          }
         />
-        
-        {/*
-          Buraya, sadece giriş yapmış kullanıcıların görebileceği 
-          diğer sayfaları ekleyebilirsiniz.
-        */}
-        {/* <Route 
-          path="/dashboard" 
+
+        <Route
+          path="/depo-ekle"
           element={
             <AuthRoute>
-              <DashboardPage />
+              <DepoEkle />
             </AuthRoute>
-          } 
-        /> */}
+          }
+        />
+
+        <Route
+          path="/depolarim"
+          element={
+            <AuthRoute>
+              <Depolarim />
+            </AuthRoute>
+          }
+        />
+
       </Routes>
     </Router>
   );

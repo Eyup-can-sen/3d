@@ -404,7 +404,7 @@ export const ModernScene: React.FC = () => {
                 {/* Durum Bilgisi Ekranı */}
                 <div style={{
                     position: 'absolute',
-                    top: '80px',
+                    top: '70px',
                     left: '20px',
                     height: '40px',
                     background: modernTheme.colors.background.main,

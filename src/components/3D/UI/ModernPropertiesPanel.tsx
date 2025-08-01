@@ -46,7 +46,7 @@ export const ModernPropertiesPanel: React.FC<ModernPropertiesPanelProps> = ({
 
   const panelStyle: React.CSSProperties = {
     position: 'fixed',
-    top: '110px',
+    top: '80px',
     right: '20px',
     width: '350px',
     maxHeight: 'calc(100vh - 40px)',

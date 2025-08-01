@@ -32,7 +32,7 @@ export default function RegisterPage() {
       setMessage("Kayıt başarıyla tamamlandı! Şimdi giriş yapabilirsiniz.");
       setSuccess(true);
       setTimeout(() => {
-        navigate("/login"); // Kayıt sonrası giriş sayfasına yönlendir
+        navigate("/"); // Kayıt sonrası giriş sayfasına yönlendir
       }, 2000);
     } catch (err: any) {
       setMessage(err.response?.data?.message || "Kayıt başarısız oldu. Lütfen tekrar deneyin.");
