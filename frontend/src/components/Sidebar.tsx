@@ -1,7 +1,7 @@
 // src/components/Sidebar.tsx
 
 import React from 'react';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // useNavigate'ı içe aktarıyoruz
 import {
     HomeIcon,
     BuildingOffice2Icon,
@@ -15,13 +15,19 @@ import {
 } from '@heroicons/react/24/solid';
 
 const Sidebar = () => {
+    const navigate = useNavigate(); // useNavigate hook'unu kullanıyoruz
+
     const user = {
         name: "Ramazan Karatut",
         role: "Sistem Yöneticisi"
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        navigate("/");
+    };
+
     return (
-        // Değişiklik burada
         <aside className="fixed top-0 left-0 h-screen w-64 bg-slate-800 p-6 flex flex-col justify-start border-r border-slate-700 shadow-xl overflow-y-auto">
             {/* Logo */}
             <div className="flex items-center space-x-3 mb-10">
@@ -67,10 +73,26 @@ const Sidebar = () => {
                 >
                     <ArrowTrendingUpIcon className="h-5 w-5" />
                     <span className="font-semibold">Açık Depo</span>
-                </Link>         
+                </Link>
+                <Link
+                    to="/urunler"
+                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
+                >
+                    <CubeIcon className="h-5 w-5" />
+                    <span className="font-semibold">Ürünler</span>
+                </Link>
+                <Link
+                    to="/ayarlar"
+                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
+                >
+                    <Cog6ToothIcon className="h-5 w-5" />
+                    <span className="font-semibold">Ayarlar</span>
+                </Link>
+                
                 {/* Çıkış Butonu */}
                 <button
-                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-400 hover:bg-red-900 hover:bg-opacity-50 transition-colors duration-200"
+                    onClick={handleLogout} // onClick olay dinleyicisi eklendi
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-400 hover:bg-red-900 hover:bg-opacity-50 transition-colors duration-200 mt-8" // Boşluk için mt-8 eklendi
                 >
                     <ArrowLeftOnRectangleIcon className="h-5 w-5" />
                     <span className="font-semibold">Çıkış Yap</span>
