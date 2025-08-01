@@ -74,20 +74,6 @@ const Sidebar = () => {
                     <ArrowTrendingUpIcon className="h-5 w-5" />
                     <span className="font-semibold">Açık Depo</span>
                 </Link>
-                <Link
-                    to="/urunler"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                >
-                    <CubeIcon className="h-5 w-5" />
-                    <span className="font-semibold">Ürünler</span>
-                </Link>
-                <Link
-                    to="/ayarlar"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200"
-                >
-                    <Cog6ToothIcon className="h-5 w-5" />
-                    <span className="font-semibold">Ayarlar</span>
-                </Link>
                 
                 {/* Çıkış Butonu */}
                 <button
