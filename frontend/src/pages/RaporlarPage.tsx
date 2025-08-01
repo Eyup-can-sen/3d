@@ -41,7 +41,10 @@ const reportsData = {
 
 export default function ReportsPage() {
     return (
-        <div className="min-h-screen bg-slate-900 p-8 md:p-12 text-white font-sans">
+        // En dıştaki div'den tüm stil sınıflarını kaldırdık.
+        // Bu div sadece bir kapsayıcı görevi görecek ve
+        // stilleri MainLayout.tsx yönetecek.
+        <div className="flex flex-col min-h-full"> 
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16">
                 <div className="mb-8 md:mb-0">
                     <h1 className="text-5xl font-extrabold text-white tracking-tight">Raporlar</h1>
